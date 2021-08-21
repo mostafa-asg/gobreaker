@@ -63,8 +63,12 @@ func (s *closedState) execute(req func() (interface{}, error)) (interface{}, err
 		}
 	}()
 
+	before := s.cb.generation
 	s.counts.onRequest()
 	res, err := req()
+	if s.cb.generation != before {
+		return res, err
+	}
 
 	if err != nil {
 		s.counts.onFailure()

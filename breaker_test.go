@@ -208,3 +208,20 @@ func TestPanicInRequest(t *testing.T) {
 	assert.Panics(t, func() { causePanic(cb) })
 	assert.Equal(t, NewCounts(1, 0, 1, 0, 1), cb.Counts())
 }
+
+func TestGeneration(t *testing.T) {
+	cb := newCustom()
+	succeed(cb)
+	ch := succeedLater(cb, 3500*time.Millisecond)
+	time.Sleep(2500 * time.Millisecond)
+
+	assert.Equal(t, NewCounts(2, 1, 0, 1, 0), cb.Counts())
+
+	time.Sleep(time.Duration(600) * time.Millisecond) // over Interval
+	assert.Equal(t, Closed, cb.currentState.getType())
+	assert.Equal(t, NewCounts(0, 0, 0, 0, 0), cb.Counts())
+
+	// the request from the previous generation has no effect on customCB.counts
+	assert.Nil(t, <-ch)
+	assert.Equal(t, NewCounts(0, 0, 0, 0, 0), cb.Counts())
+}
